@@ -1,19 +1,25 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
-import mongoPlugin  from './plugins/mongo.js'
-import wsPlugin     from './plugins/websocket.js'
-import corsPlugin   from './plugins/cors.js'
-import healthRoutes from './routes/health.js'
-import roomRoutes   from './routes/rooms.js'
+import mongoPlugin       from './plugins/mongo.js'
+import wsPlugin          from './plugins/websocket.js'
+import corsPlugin        from './plugins/cors.js'
+import staticFilesPlugin from './plugins/static.js'
+import healthRoutes      from './routes/health.js'
+import roomRoutes        from './routes/rooms.js'
 
-const app = Fastify({ logger: { transport: { target: 'pino-pretty' } } })
+const isProd = process.env.NODE_ENV === 'production'
 
-// plugins
+const app = Fastify({
+  logger: isProd
+    ? true
+    : { transport: { target: 'pino-pretty' } }
+})
+
 await app.register(corsPlugin)
 await app.register(mongoPlugin)
 await app.register(wsPlugin)
+await app.register(staticFilesPlugin)
 
-// routes
 await app.register(healthRoutes)
 await app.register(roomRoutes, { prefix: '/api' })
 
