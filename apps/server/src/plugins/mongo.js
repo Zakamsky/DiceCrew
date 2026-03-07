@@ -2,15 +2,22 @@ import fp from 'fastify-plugin'
 import mongoose from 'mongoose'
 
 async function mongoPlugin(app) {
-  const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/dicecrew'
+  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/dicecrew'
 
-  mongoose.connection.on('connected',    () => app.log.info('MongoDB connected'))
-  mongoose.connection.on('disconnected', () => app.log.warn('MongoDB disconnected'))
-
-  await mongoose.connect(uri)
+  try {
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+    })
+    app.log.info('MongoDB connected')
+  } catch (err) {
+    app.log.error({ err }, 'MongoDB connection failed')
+    throw err
+  }
 
   app.addHook('onClose', async () => {
     await mongoose.disconnect()
+    app.log.info('MongoDB disconnected')
   })
 }
 

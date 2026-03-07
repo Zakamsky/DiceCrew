@@ -22,8 +22,9 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (!username) { navigate('/'); return }
-    connect()
-    send(WS_EVENTS.JOIN, { roomCode: code, username })
+    connect(() => {
+      send(WS_EVENTS.JOIN, { roomCode: code, username })
+    })
     return () => disconnect()
   }, [])
 
