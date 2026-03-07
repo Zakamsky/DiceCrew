@@ -2,7 +2,9 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useRoomStore } from '../store/roomStore.js'
 import { WS_EVENTS } from '@dicecrew/shared'
 
-const WS_URL = import.meta.env.DEV ? 'ws://127.0.0.1:3001/ws' : `ws://${location.host}/ws`
+const WS_URL = import.meta.env.DEV
+  ? 'ws://127.0.0.1:3001/ws'
+  : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
 
 export function useWebSocket() {
   const socketRef = useRef(null)
