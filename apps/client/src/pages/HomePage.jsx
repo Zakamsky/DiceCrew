@@ -1,13 +1,15 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useRoomStore } from '../store/roomStore.js'
 import { createRoom, getRoom } from '../api/rooms.js'
 import styles from './HomePage.module.css'
 
 export default function HomePage() {
   const navigate  = useNavigate()
+  const [searchParams] = useSearchParams()
   const setRoom   = useRoomStore(s => s.setRoom)
   const setUsername = useRoomStore(s => s.setUsername)
+  const hydrateSession = useRoomStore(s => s.hydrateSession)
 
   const [username, setName]   = useState('')
   const [joinCode, setJoinCode] = useState('')
@@ -15,6 +17,18 @@ export default function HomePage() {
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
   const [tab, setTab]         = useState('join') // 'join' | 'create'
+
+  useEffect(() => {
+    hydrateSession()
+    const saved = useRoomStore.getState().username
+    if (saved) setName(saved)
+
+    const join = searchParams.get('join')
+    if (join) {
+      setJoinCode(join.toUpperCase())
+      setTab('join')
+    }
+  }, [searchParams, hydrateSession])
 
   async function handleJoin() {
     if (!username.trim() || !joinCode.trim()) return setError('Enter your name and room code')

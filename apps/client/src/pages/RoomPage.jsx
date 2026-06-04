@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useRoomStore } from '../store/roomStore.js'
 import { useWebSocket } from '../hooks/useWebSocket.js'
+import { getRoom } from '../api/rooms.js'
 import { WS_EVENTS } from '@dicecrew/shared'
 import styles from './RoomPage.module.css'
 
@@ -15,18 +16,43 @@ export default function RoomPage() {
   const members   = useRoomStore(s => s.members)
   const connected = useRoomStore(s => s.connected)
   const reset     = useRoomStore(s => s.reset)
+  const hydrateSession = useRoomStore(s => s.hydrateSession)
+  const setRoom   = useRoomStore(s => s.setRoom)
 
   const [text, setText]       = useState('')
   const [copied, setCopied]   = useState(false)
   const bottomRef             = useRef(null)
 
   useEffect(() => {
-    if (!username) { navigate('/'); return }
-    connect(() => {
-      send(WS_EVENTS.JOIN, { roomCode: code, username })
-    })
-    return () => disconnect()
-  }, [])
+    let cancelled = false
+
+    async function joinRoom() {
+      if (!useRoomStore.getState().username) hydrateSession()
+      const name = useRoomStore.getState().username
+      if (!name) {
+        navigate(`/?join=${code}`, { replace: true })
+        return
+      }
+
+      const room = await getRoom(code)
+      if (cancelled) return
+      if (!room) {
+        navigate('/', { replace: true })
+        return
+      }
+
+      setRoom(code)
+      connect(() => {
+        send(WS_EVENTS.JOIN, { roomCode: code, username: name })
+      })
+    }
+
+    joinRoom()
+    return () => {
+      cancelled = true
+      disconnect()
+    }
+  }, [code, navigate, connect, send, disconnect, hydrateSession, setRoom])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
